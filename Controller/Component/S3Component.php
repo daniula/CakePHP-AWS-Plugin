@@ -138,21 +138,8 @@ class S3Component extends Component {
     return $result;
   }
 
-  public function url($file, $expires = null) {
-
-    if (!is_null($expires)) {
-      $expires = gmdate(DATE_RFC2822, strtotime($expires));
-      $opt = array('response' => compact('expires'));
-    } else {
-      $opt = null;
-    }
-
-    $response = $this->service->get_object_url($this->bucket, $file, 0, $opt);
-
-    print '<pre>';
-    print_r($response);
-    print '</pre>';
-    die('print_r');
+  public function url($file, $expires = 0) {
+    return $this->service->get_object_url($this->bucket, $file, $expires);
   }
 
   public function delete($file) {
