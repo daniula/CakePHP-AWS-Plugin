@@ -1,0 +1,7 @@
+<?php
+
+/**
+ * Name of file with RSA key located in `Config/` directory.
+ **/
+Configure::write('AWS.CloudFront.private_key', 'pk-***.pem');
+

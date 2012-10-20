@@ -1,2 +1,2 @@
 /Config/*
-!/Config/.gitkeep
+!/Config/security.php.default
