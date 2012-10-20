@@ -60,6 +60,9 @@ class S3Component extends Component {
   }
 
   public function expiration($prefix, $expiration = 1) {
+    if (!preg_match('`/$`', $prefix)) {
+      $prefix .= '/';
+    }
     $rules = $this->getExpirations();
     $rules[] = compact('prefix', 'expiration');
     return $this->setExpirations($rules);
@@ -68,7 +71,7 @@ class S3Component extends Component {
   public function setExpirations($rules) {
     foreach ($rules as &$rule) {
       if (empty($rule['prefix']) || empty($rule['expiration'])) {
-        throw new CakeException('Rule has to have `prefi` and `expiration` field.');
+        throw new Exception('Rule has to have `prefix` and `expiration` field.');
       }
       $rule['expiration'] = array('days' => $rule['expiration']);
     }
@@ -82,66 +85,77 @@ class S3Component extends Component {
 
     $result = array();
 
-
-    print_r($response->body->Rule->Prefix->to_string());
-    $response->body->Rule->next();
-    print_r($response->body->Rule->Prefix->to_string());
-    die('stop');
-
-    if (is_array($response->body->Rule)) {
-      foreach ($response->body->Rule as $rule) {
+    if ($response->body->Rule()) {
+      foreach ($response->body->Rule()->getArrayCopy() as $rule) {
         $result[] = array(
           'prefix' => $rule->Prefix->to_string(),
           'expiration' => $rule->Expiration->Days->to_string(),
         );
       }
-    } elseif (!empty($response->body->Rule)) {
-
     }
-
-    print '<pre>';
-    print_r($result);
-    print '</pre>';
-    die('print_r');
-
 
     return $result;
   }
 
-  public function files($prefix = '', $include_dirs = true, $marker = 0) {
-    $delimiter = '/';
-    $prefix .= $delimiter;
-    $opt = compact('prefix', 'delimiter', 'marker');
+  public function cleanExpirations() {
+    $response = $this->getS3()->delete_object_expiration_config($this->bucket);
+    return ($response->status == 204);
+  }
 
-    if (!$include_dirs) {
+  public function files($prefix = '', $tree = true, $marker = 0) {
+    if (is_bool($prefix)) {
+      if ($tree !== true) {
+        $marker = $tree;
+      }
+      $tree = $prefix;
+      $prefix = '';
+    }
+
+    $delimiter = '/';
+    if ($prefix !== '') {
+      $prefix .= $delimiter;
+    }
+
+    if (!$tree) {
+      $opt = compact('prefix', 'marker');
       $result = $this->getS3()->get_object_list($this->bucket, $opt);
     } else {
+      $opt = compact('prefix', 'delimiter', 'marker');
       $response = $this->getS3()->list_objects($this->bucket, $opt);
 
       $result = array('dirs' => array(), 'files' => array());
 
-      if (is_array($response->body->Contents)) {
-        foreach ($response->body->Contents as $file) {
+      if ($response->body->Contents()) {
+        foreach ($response->body->Contents()->getArrayCopy() as $file) {
           $result['files'][] = $file->Key->to_string();
         }
-      } elseif (!empty($response->body->Contents)) {
-        $result['files'][] = $response->body->Contents->Key->to_string();
       }
 
-      if (is_array($response->body->CommonPrefixes)) {
-        foreach ($response->body->CommonPrefixes as $dir) {
+      if ($response->body->CommonPrefixes()) {
+        foreach ($response->body->CommonPrefixes()->getArrayCopy() as $dir) {
           $result['dirs'][] = $dir->Prefix->to_string();
         }
-      } elseif (!empty($response->body->CommonPrefixes)) {
-        $result['dirs'][] = $response->body->CommonPrefixes->Prefix->to_string();
       }
     }
 
     return $result;
   }
 
-  public function url($file) {
-    // $this->getS3()->
+  public function url($file, $expires = null) {
+
+    if (!is_null($expires)) {
+      $expires = gmdate(DATE_RFC2822, strtotime($expires));
+      $opt = array('response' => compact('expires'));
+    } else {
+      $opt = null;
+    }
+
+    $response = $this->getS3()->get_object_url($this->bucket, $file, 0, $opt);
+
+    print '<pre>';
+    print_r($response);
+    print '</pre>';
+    die('print_r');
   }
 
   public function delete($file) {
