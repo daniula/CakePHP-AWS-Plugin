@@ -3,23 +3,20 @@
 App::import('Vendor','AWS', array('file' => 'AWS/sdk.class.php'));
 
 class S3Component extends Component {
-  private $s3 = null;
+  private $service;
   private $region = AmazonS3::REGION_EU_W1;
   private $bucket = 'sellbox';
 
-  public function getS3() {
-    if (is_null($this->s3)) {
-      $this->s3 = new AmazonS3();
-    }
-    return $this->s3;
+  public function initialize($controller) {
+    $this->service = new AmazonS3();
   }
 
   public function getBuckets() {
-    return $this->getS3()->get_bucket_list();
+    return $this->service->get_bucket_list();
   }
 
   public function createBucket($name = null) {
-    return $this->getS3()->create_bucket($name, $this->region);
+    return $this->service->create_bucket($name, $this->region);
   }
 
   public function readBucket($name) {
@@ -27,11 +24,11 @@ class S3Component extends Component {
   }
 
   public function deleteBucket($name) {
-    return $this->getS3()->delete_bucket($name);
+    return $this->service->delete_bucket($name);
   }
 
   public function upload($file_name, $file_path) {
-    return $this->getS3()->create_object($this->bucket, $file_name, array(
+    return $this->service->create_object($this->bucket, $file_name, array(
       'fileUpload' => $file_path,
       'acl' => AmazonS3::ACL_PRIVATE,
       'storage' => AmazonS3::STORAGE_REDUCED,
@@ -46,7 +43,7 @@ class S3Component extends Component {
       'storage' => AmazonS3::STORAGE_REDUCED,
     );
 
-    $response = $this->getS3()->copy_object(
+    $response = $this->service->copy_object(
       array('bucket' => $this->bucket, 'filename' => $source),
       array('bucket' => $this->bucket, 'filename' => $dest),
       $opt
@@ -75,13 +72,13 @@ class S3Component extends Component {
       }
       $rule['expiration'] = array('days' => $rule['expiration']);
     }
-    $response = $this->getS3()->create_object_expiration_config($this->bucket, compact('rules'));
+    $response = $this->service->create_object_expiration_config($this->bucket, compact('rules'));
 
     return ($response->status == 200);
   }
 
   public function getExpirations() {
-    $response = $this->getS3()->get_object_expiration_config($this->bucket);
+    $response = $this->service->get_object_expiration_config($this->bucket);
 
     $result = array();
 
@@ -98,7 +95,7 @@ class S3Component extends Component {
   }
 
   public function cleanExpirations() {
-    $response = $this->getS3()->delete_object_expiration_config($this->bucket);
+    $response = $this->service->delete_object_expiration_config($this->bucket);
     return ($response->status == 204);
   }
 
@@ -118,10 +115,10 @@ class S3Component extends Component {
 
     if (!$tree) {
       $opt = compact('prefix', 'marker');
-      $result = $this->getS3()->get_object_list($this->bucket, $opt);
+      $result = $this->service->get_object_list($this->bucket, $opt);
     } else {
       $opt = compact('prefix', 'delimiter', 'marker');
-      $response = $this->getS3()->list_objects($this->bucket, $opt);
+      $response = $this->service->list_objects($this->bucket, $opt);
 
       $result = array('dirs' => array(), 'files' => array());
 
@@ -150,7 +147,7 @@ class S3Component extends Component {
       $opt = null;
     }
 
-    $response = $this->getS3()->get_object_url($this->bucket, $file, 0, $opt);
+    $response = $this->service->get_object_url($this->bucket, $file, 0, $opt);
 
     print '<pre>';
     print_r($response);
