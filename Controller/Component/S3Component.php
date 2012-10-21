@@ -7,7 +7,8 @@ class S3Component extends Component {
   private $region = AmazonS3::REGION_EU_W1;
   private $bucket = 'sellbox';
 
-  public function initialize($controller) {
+  public function __construct(ComponentCollection $collection, $settings = array()) {
+    parent::__construct($collection, $settings);
     $this->service = new AmazonS3();
   }
 
