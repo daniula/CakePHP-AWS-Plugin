@@ -28,10 +28,6 @@ class S3Component extends Component {
     return $this->bucket;
   }
 
-  public function readBucket($name) {
-
-  }
-
   public function deleteBucket($name) {
     return $this->service->delete_bucket($name);
   }
@@ -42,10 +38,7 @@ class S3Component extends Component {
       'acl' => $public ? AmazonS3::ACL_PUBLIC : AmazonS3::ACL_PRIVATE,
       'storage' => AmazonS3::STORAGE_REDUCED,
     ));
-    if ($public) {
-      $this->service->set_object_acl($this->bucket, $filename, AmazonS3::ACL_PUBLIC);
-    }
-    return $result;
+    return $this->url($file_name);
   }
 
   public function copy($source, $dest) {
