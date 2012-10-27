@@ -38,7 +38,10 @@ class S3Component extends Component {
       'acl' => $public ? AmazonS3::ACL_PUBLIC : AmazonS3::ACL_PRIVATE,
       'storage' => AmazonS3::STORAGE_REDUCED,
     ));
-    return $this->url($file_name);
+    if ($public) {
+      $result = $this->url($file_name);
+    }
+    return $result;
   }
 
   public function copy($source, $dest) {
