@@ -153,12 +153,15 @@ class S3Component extends Component {
 
   public function delete($files) {
     $result = $objects = array();
+    $files = is_array($files) ? $files : array($files);
 
     foreach ($files as $file) {
-      $objects[] = array('key' => $file);
+      $file = parse_url($file);
+      $objects[] = array('key' => substr($file['path'], 1));
     }
-
+    
     $response = $this->service->delete_objects($this->bucket, compact('objects'));
+
     if ($response->body->Deleted()) {
       foreach ($response->body->Deleted()->getArrayCopy() as $deleted) {
         $result[] = $deleted->Key->to_string();
