@@ -10,6 +10,7 @@ class S3Component extends Component {
   public function __construct(ComponentCollection $collection, $settings = array()) {
     parent::__construct($collection, $settings);
     $this->service = new AmazonS3();
+    $this->service->ssl_verification = false;
   }
 
   public function getBuckets() {
@@ -20,6 +21,13 @@ class S3Component extends Component {
     return $this->service->create_bucket($name, $this->region);
   }
 
+  public function bucket($bucket = null) {
+    if (!is_null($bucket)) {
+      $this->bucket = $bucket;
+    }
+    return $this->bucket;
+  }
+
   public function readBucket($name) {
 
   }
@@ -28,10 +36,10 @@ class S3Component extends Component {
     return $this->service->delete_bucket($name);
   }
 
-  public function upload($file_name, $file_path) {
+  public function upload($file_name, $file_path, $public = false) {
     return $this->service->create_object($this->bucket, $file_name, array(
       'fileUpload' => $file_path,
-      'acl' => AmazonS3::ACL_PRIVATE,
+      'acl' => $public ? AmazonS3::ACL_PUBLIC : AmazonS3::ACL_PRIVATE,
       'storage' => AmazonS3::STORAGE_REDUCED,
     ));
   }
