@@ -37,11 +37,15 @@ class S3Component extends Component {
   }
 
   public function upload($file_name, $file_path, $public = false) {
-    return $this->service->create_object($this->bucket, $file_name, array(
+    $result = $this->service->create_object($this->bucket, $file_name, array(
       'fileUpload' => $file_path,
       'acl' => $public ? AmazonS3::ACL_PUBLIC : AmazonS3::ACL_PRIVATE,
       'storage' => AmazonS3::STORAGE_REDUCED,
     ));
+    if ($public) {
+      $this->service->set_object_acl($this->bucket, $filename, AmazonS3::ACL_PUBLIC);
+    }
+    return $result;
   }
 
   public function copy($source, $dest) {
@@ -159,7 +163,7 @@ class S3Component extends Component {
       $file = parse_url($file);
       $objects[] = array('key' => substr($file['path'], 1));
     }
-    
+
     $response = $this->service->delete_objects($this->bucket, compact('objects'));
 
     if ($response->body->Deleted()) {
