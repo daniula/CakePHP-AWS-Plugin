@@ -1,6 +1,6 @@
 <?php
 
-App::import('Vendor','AWS', array('file' => 'AWS/sdk.class.php'));
+App::import('Vendor','AWS-SDK', array('file' => 'AWS-SDK/sdk.class.php'));
 
 class S3Component extends Component {
   private $service;
